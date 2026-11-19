@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
-"""Entry point for the make.fun news-image bounty (18 Nov 2026).
+"""Build the 18 Nov 2026 front-page image (v4) and verify it.
 
-The entry is a pre-rendered picture: this program only copies it to the
-output folder. Standard library only, no network, no timestamps — the
-bytes written are identical on every run.
+Deterministic: same input -> same entry.png bytes on every run.
 """
+import hashlib
 import os
-import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SOURCE = os.path.join(HERE, "entry.png")
+sys.path.insert(0, HERE)
+
+import generate_image  # noqa: E402
 
 
-def run():
-    """Copy entry.png into the output directory as /output/entry.png."""
-    destination_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(destination_dir, exist_ok=True)
-    destination = os.path.join(destination_dir, "entry.png")
-    shutil.copyfile(SOURCE, destination)
-    print("wrote", destination)
-    return 0
+def main():
+    out = os.path.join(HERE, "entry.png")
+    img = generate_image.build()
+    img.save(out, format="PNG", optimize=True)
+    with open(out, "rb") as fh:
+        data = fh.read()
+    print("entry.png", len(data), "bytes")
+    print("sha256", hashlib.sha256(data).hexdigest())
+    assert img.size == (1024, 1024), img.size
+    print("ok: 1024x1024 front page, 41 stories")
 
 
 if __name__ == "__main__":
-    sys.exit(run())
+    main()
